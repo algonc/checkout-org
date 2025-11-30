@@ -62,7 +62,6 @@ For SSO enabled orgs, make sure the PAT is authorized for the org (Settings -> D
 > The script discards local changes!
 
 
-
 ---
 
 ## License
