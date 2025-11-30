@@ -40,7 +40,6 @@ Alternatively, just set GH_TOKEN environment variable with a Personal Access Tok
 export GH_TOKEN=yourtokenhere
 ```
 
-
 For SSO enabled orgs, make sure the PAT is authorized for the org (Settings -> Developer Settings -> Personal Access Tokens -> Configure SSO -> select org and authorize)
 
 
@@ -49,7 +48,11 @@ For SSO enabled orgs, make sure the PAT is authorized for the org (Settings -> D
 ## Usage
 
 ```bash
-./checkout-all.sh <github-org-url> <local-target-path>
+./checkout-all.sh <github-org-url> <local-target-path> [--all-branches]
+```
+
+* `--all-branches`: If provided, every available branch is checked out. When not provided, only `trunk` branches will be checked out, namely `main`, `master`, `dev`, `develop` and `development`.
+
 ```
 
 ### Example
@@ -66,4 +69,4 @@ For SSO enabled orgs, make sure the PAT is authorized for the org (Settings -> D
 
 ## License
 
-This script is provided "as is" under the MIT license. Modify and use freely.
+This script is provided "as is" under the MIT license.
