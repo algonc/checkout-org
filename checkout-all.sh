@@ -71,15 +71,31 @@ update_all_branches() {
     done
 }
 
-# Extract the org name from the URL
-ORG_NAME=$(basename "$ORG_URL")
+require_command() {
+    if ! command -v "$1" >/dev/null 2>&1; then
+        echo "Error: $1 is required but not installed."
+        exit 1
+    fi
+}
 
-# Ensure gh CLI is installed
-if ! command -v gh >/dev/null 2>&1; then
-    echo "Error: GitHub CLI (gh) is required but not installed."
-    echo "Install it: https://cli.github.com/"
+extract_org_name() {
+    local org="${1%/}"
+    org="${org%.git}"
+    org="${org##*/}"
+    echo "$org"
+}
+
+# Extract the org name from the URL
+ORG_NAME=$(extract_org_name "$ORG_URL")
+
+if [ -z "$ORG_NAME" ]; then
+    echo "Error: Could not determine GitHub organization from: $ORG_URL"
     exit 1
 fi
+
+# Ensure required commands are installed
+require_command gh
+require_command git
 
 echo "Fetching repositories for GitHub org: $ORG_NAME"
 
