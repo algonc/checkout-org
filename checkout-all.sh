@@ -2,21 +2,50 @@
 # Copyright (c) 2025 André Gonçalves
 set -e
 
-if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
-    echo "Usage: $0 <github-org-url> <target-path> [--all-branches]"
-    echo "Example: $0 https://github.com/my-org /home/user/git/my-org"
+# Default values
+ONLY_TRUNK=true
+IGNORE_REPOS=()
+
+# ------------------------------------------
+# Argument parsing
+# ------------------------------------------
+POSITIONAL_ARGS=()
+
+for ARG in "$@"; do
+    case $ARG in
+        --all-branches)
+            ONLY_TRUNK=false
+            ;;
+        --ignore=*)
+            IGNORE_VALUE="${ARG#*=}"
+
+            # Convert comma-separated list into bash array
+            IFS=',' read -r -a IGNORE_REPOS <<< "$IGNORE_VALUE"
+            ;;
+        -*)
+            echo "Unknown option: $ARG"
+            exit 1
+            ;;
+        *)
+            POSITIONAL_ARGS+=("$ARG")
+            ;;
+    esac
+done
+
+# Restore positional arguments
+set -- "${POSITIONAL_ARGS[@]}"
+
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 <github-org-url> <target-path> [--all-branches] [--ignore=repo1,repo2]"
+    echo "Example:"
+    echo "  $0 https://github.com/my-org /home/user/git/my-org"
+    echo "  $0 https://github.com/my-org /home/user/git/my-org --all-branches"
+    echo "  $0 https://github.com/my-org /home/user/git/my-org --ignore=repo-a,repo-b"
     exit 1
 fi
 
 ORG_URL="$1"
 TARGET_DIR="$2"
-FLAG="$3"
-
-# Behavior flag
-ONLY_TRUNK=true
-if [[ "$FLAG" == "--all-branches" ]]; then
-    ONLY_TRUNK=false
-fi
 
 # Define trunk-like branches
 TRUNK_BRANCHES=("main" "master" "dev" "develop" "development")
@@ -33,6 +62,11 @@ fi
 
 echo "Fetching repositories for GitHub org: $ORG_NAME"
 
+# Show ignored repos
+if [ "${#IGNORE_REPOS[@]}" -gt 0 ]; then
+    echo "Ignoring repositories: ${IGNORE_REPOS[*]}"
+fi
+
 # Create the base directory if needed
 mkdir -p "$TARGET_DIR"
 
@@ -42,6 +76,25 @@ REPOS=$(gh repo list "$ORG_NAME" --limit 500 --json name --jq '.[].name')
 cd "$TARGET_DIR"
 
 for REPO in $REPOS; do
+
+    # ------------------------------------------
+    # Ignore repositories
+    # ------------------------------------------
+    SKIP=false
+
+    for IGNORED in "${IGNORE_REPOS[@]}"; do
+        if [[ "$REPO" == "$IGNORED" ]]; then
+            SKIP=true
+            break
+        fi
+    done
+
+    if [ "$SKIP" = true ]; then
+        echo "----------------------------------------------"
+        echo "Skipping ignored repository: $REPO"
+        continue
+    fi
+
     echo "----------------------------------------------"
     echo "Processing repository: $REPO"
 
@@ -63,9 +116,9 @@ for REPO in $REPOS; do
 
                 if echo "$REMOTE_BRANCHES" | grep -q "^$REMOTE_BRANCH$"; then
                     echo "Updating trunk branch: $TRUNK"
-					
-					# Always discard local changes before switching
-					git reset --hard
+
+                    # Always discard local changes before switching
+                    git reset --hard
 
                     if ! git rev-parse --verify "$TRUNK" >/dev/null 2>&1; then
                         git checkout -b "$TRUNK" "$REMOTE_BRANCH"
@@ -87,9 +140,9 @@ for REPO in $REPOS; do
                 LOCAL_BRANCH="${BRANCH#origin/}"
 
                 echo "Updating branch: $LOCAL_BRANCH"
-				
-				# Always discard local changes before switching
-				git reset --hard
+
+                # Always discard local changes before switching
+                git reset --hard
 
                 if ! git rev-parse --verify "$LOCAL_BRANCH" >/dev/null 2>&1; then
                     git checkout -b "$LOCAL_BRANCH" "$REMOTE_BRANCH"

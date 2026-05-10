@@ -10,7 +10,7 @@ This tool requires:
 
 ### 1. GitHub CLI (gh)
 
-Install from: [https://cli.github.com/](https://cli.github.com/)
+Install from: https://cli.github.com/
 
 Verify installation:
 
@@ -34,36 +34,78 @@ If your organization contains private repositories, authenticate once:
 gh auth login
 ```
 
-Alternatively, just set GH_TOKEN environment variable with a Personal Access Token with the necessary access.
+Alternatively, set the `GH_TOKEN` environment variable with a Personal Access Token that has the necessary permissions:
 
 ```bash
 export GH_TOKEN=yourtokenhere
 ```
 
-For SSO enabled orgs, make sure the PAT is authorized for the org (Settings -> Developer Settings -> Personal Access Tokens -> Configure SSO -> select org and authorize)
+For SSO-enabled organizations, make sure the PAT is authorized for the organization:
 
+`Settings -> Developer Settings -> Personal Access Tokens -> Configure SSO -> select org and authorize`
 
 ---
 
 ## Usage
 
 ```bash
-./checkout-all.sh <github-org-url> <local-target-path> [--all-branches]
+./checkout-all.sh <github-org-url> <local-target-path> [--all-branches] [--ignore=repo1,repo2]
 ```
 
-* `--all-branches`: If provided, every available branch is checked out. When not provided, only `trunk` branches will be checked out, namely `main`, `master`, `dev`, `develop` and `development`.
+### Optional Flags
 
+#### `--all-branches`
+
+If provided, every available branch is checked out.
+
+When omitted, only trunk-like branches are updated:
+
+- `main`
+- `master`
+- `dev`
+- `develop`
+- `development`
+
+#### `--ignore=repo1,repo2`
+
+Comma-separated list of repositories that should be skipped during clone/update operations.
+
+Example:
+
+```bash
+--ignore=experimental-repo,legacy-service,temp-project
 ```
 
-### Example
+---
+
+## Examples
+
+### Clone/update only trunk branches
 
 ```bash
 ./checkout-all.sh https://github.com/my-org /home/myuser/git/my-org
 ```
 
-> [!WARNING]
-> The script discards local changes!
+### Clone/update all branches
 
+```bash
+./checkout-all.sh https://github.com/my-org /home/myuser/git/my-org --all-branches
+```
+
+### Ignore specific repositories
+
+```bash
+./checkout-all.sh https://github.com/my-org /home/myuser/git/my-org --ignore=repo-a,repo-b
+```
+
+### Combine both flags
+
+```bash
+./checkout-all.sh https://github.com/my-org /home/myuser/git/my-org --all-branches --ignore=repo-a,repo-b
+```
+
+> [!WARNING]
+> The script discards local changes using `git reset --hard` before switching branches.
 
 ---
 
