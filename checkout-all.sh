@@ -53,7 +53,7 @@ TRUNK_BRANCHES=("main" "master" "dev" "develop" "development")
 update_all_branches() {
     echo "Updating ALL branches..."
 
-    for BRANCH in $(git branch -r --format="%(refname:short)" | grep -vE "^origin$"); do
+    for BRANCH in $(git branch -r --format="%(refname:short)" | grep -vE "^origin(/HEAD)?$"); do
         REMOTE_BRANCH="$BRANCH"
         LOCAL_BRANCH="${BRANCH#origin/}"
 
