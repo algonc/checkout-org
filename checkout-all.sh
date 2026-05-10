@@ -50,6 +50,27 @@ TARGET_DIR="$2"
 # Define trunk-like branches
 TRUNK_BRANCHES=("main" "master" "dev" "develop" "development")
 
+update_all_branches() {
+    echo "Updating ALL branches..."
+
+    for BRANCH in $(git branch -r --format="%(refname:short)" | grep -vE "^origin$"); do
+        REMOTE_BRANCH="$BRANCH"
+        LOCAL_BRANCH="${BRANCH#origin/}"
+
+        echo "Updating branch: $LOCAL_BRANCH"
+
+        # Always discard local changes before switching
+        git reset --hard
+
+        if ! git rev-parse --verify "$LOCAL_BRANCH" >/dev/null 2>&1; then
+            git checkout -b "$LOCAL_BRANCH" "$REMOTE_BRANCH"
+        else
+            git checkout "$LOCAL_BRANCH"
+            git reset --hard "$REMOTE_BRANCH"
+        fi
+    done
+}
+
 # Extract the org name from the URL
 ORG_NAME=$(basename "$ORG_URL")
 
@@ -133,24 +154,7 @@ for REPO in $REPOS; do
         # ALL branches mode
         # ------------------------------------------
         else
-            echo "Updating ALL branches…"
-
-            for BRANCH in $(git branch -r --format="%(refname:short)" | grep -vE "^origin$"); do
-                REMOTE_BRANCH="$BRANCH"
-                LOCAL_BRANCH="${BRANCH#origin/}"
-
-                echo "Updating branch: $LOCAL_BRANCH"
-
-                # Always discard local changes before switching
-                git reset --hard
-
-                if ! git rev-parse --verify "$LOCAL_BRANCH" >/dev/null 2>&1; then
-                    git checkout -b "$LOCAL_BRANCH" "$REMOTE_BRANCH"
-                else
-                    git checkout "$LOCAL_BRANCH"
-                    git reset --hard "$REMOTE_BRANCH"
-                fi
-            done
+            update_all_branches
         fi
 
         cd ..
@@ -161,6 +165,10 @@ for REPO in $REPOS; do
         cd "$REPO"
 
         git fetch --all
+
+        if [ "$ONLY_TRUNK" = false ]; then
+            update_all_branches
+        fi
 
         cd ..
     fi
